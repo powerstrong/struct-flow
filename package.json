@@ -1,0 +1,24 @@
+{
+  "name": "struct-flow",
+  "private": true,
+  "version": "0.0.1",
+  "description": "Struct Flow — 구조설계 엔지니어용 pre-check 워크벤치 (MVP).",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "npm run -ws --if-present build",
+    "test": "npm run -ws --if-present test",
+    "typecheck": "npm run -ws --if-present typecheck",
+    "lint": "npm run -ws --if-present lint",
+    "dev:web": "npm run -w @struct-flow/web dev",
+    "dev:api": "npm run -w @struct-flow/api dev"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "devDependencies": {
+    "typescript": "5.6.3"
+  }
+}

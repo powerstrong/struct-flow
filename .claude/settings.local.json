@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(Get-Command pnpm,npm,node,wrangler -ErrorAction SilentlyContinue)",
+      "PowerShell($tools = @{}; foreach \\($t in 'pnpm','npm','node','wrangler','git','gh','omc','codex'\\) { $cmd = Get-Command $t -ErrorAction SilentlyContinue; $tools[$t] = if \\($cmd\\) { $cmd.Source } else { 'NOT FOUND' } }; $tools | Format-Table -AutoSize)"
+    ]
+  }
+}

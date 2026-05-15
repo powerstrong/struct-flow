@@ -1,0 +1,171 @@
+{
+  "name": "Struct Flow MVP",
+  "summary": "구조설계 엔지니어용 pre-check 워크벤치 MVP — React+Vite SPA + Cloudflare Pages Functions + D1, 4개 계산기 + 자체 인증 + 관리자 페이지.",
+  "constraints": [
+    "monorepo: npm workspaces (pnpm 미설치)",
+    "프론트: React+Vite+TS, Tailwind only, react-hook-form+zod",
+    "API: Cloudflare Pages Functions (functions/api/[[path]].ts 단일 진입)",
+    "DB: Cloudflare D1, Drizzle ORM, wrangler d1 migrations",
+    "인증: WebCrypto PBKDF2 ≥100k, HttpOnly Secure Cookie, opaque random token (JWT 금지)",
+    "계산 로직은 apps/api/src/calculators/<slug>/ 안에서만",
+    "apps/web에서 계산 수식 import 금지",
+    "MGT 빌더는 빈 스텁만 (Phase 2)",
+    "계산기 인터페이스 일관성: input.ts/compute.ts/view.ts/meta.ts/index.ts (+ optional mgt.ts)"
+  ],
+  "stories": [
+    {
+      "id": "US-001",
+      "title": "Repo + monorepo 골격",
+      "priority": 1,
+      "passes": false,
+      "acceptanceCriteria": [
+        "C:/src/incubating/struct-flow/.git 디렉토리 존재 (git init 완료)",
+        "루트에 package.json 존재 + workspaces: [\"apps/*\", \"packages/*\"] 선언",
+        "apps/web, apps/api, packages/shared 디렉토리 + 각자의 package.json 존재",
+        "루트에 .gitignore (node_modules, dist, .wrangler, .dev.vars 포함)",
+        "AGENTS.md와 CLAUDE.md 둘 다 존재하고 deep interview 답변 6의 7개 경계 규칙을 모두 포함",
+        "README.md 존재 + 프로젝트명/면책/한국어"
+      ]
+    },
+    {
+      "id": "US-002",
+      "title": "packages/shared 타입 패키지",
+      "priority": 2,
+      "passes": false,
+      "acceptanceCriteria": [
+        "packages/shared/src/calculators.ts: CalculatorId 유니온 = 4개 정확한 slug",
+        "packages/shared/src/viewmodel.ts: ViewModel2D 타입 (shapes/bounds/units/annotations)",
+        "packages/shared/src/contracts.ts: ApiError, Result wrapper, 공통 응답 타입",
+        "packages/shared가 tsc --noEmit 통과 (npm run typecheck -w packages/shared)"
+      ]
+    },
+    {
+      "id": "US-003",
+      "title": "apps/api skeleton + calculator registry",
+      "priority": 3,
+      "passes": false,
+      "acceptanceCriteria": [
+        "apps/api/wrangler.toml 존재: name=struct-flow-api, compatibility_date 2026, D1 binding DB",
+        "apps/api/functions/api/[[path]].ts: 단일 진입 + apps/api/src/index.ts 라우터로 위임",
+        "apps/api/src/calculators/registry.ts가 4개 calculator를 import해 배열로 export",
+        "GET /api/health → 200 {status:'ok'} (Vitest로 라우터 함수 단위 테스트 통과)",
+        "apps/api npm run typecheck 통과"
+      ]
+    },
+    {
+      "id": "US-004",
+      "title": "D1 스키마 + 마이그레이션",
+      "priority": 4,
+      "passes": false,
+      "acceptanceCriteria": [
+        "apps/api/migrations/0001_init.sql: users, sessions, pro_entitlements, calc_history, admin_audit_logs 5개 테이블 CREATE",
+        "users 테이블: id, email UNIQUE, password_hash, salt, display_name, is_admin INTEGER DEFAULT 0, created_at",
+        "sessions: id, user_id FK, token_hash, expires_at, created_at + index on token_hash",
+        "pro_entitlements: id, user_id FK, plan, status, granted_at, expires_at, granted_by, admin_memo, source",
+        "calc_history: id, user_id FK, tool_slug, tool_version, input_json, result_json, created_at",
+        "admin_audit_logs: id, admin_user_id, action_type, target_user_id, payload_json, created_at",
+        "마이그레이션 파일이 sqlite parser로 검증 통과 (better-sqlite3로 in-memory 적용 성공)"
+      ]
+    },
+    {
+      "id": "US-005",
+      "title": "infra: d1.ts / auth.ts (PBKDF2+세션) / audit.ts",
+      "priority": 5,
+      "passes": false,
+      "acceptanceCriteria": [
+        "apps/api/src/infra/auth.ts: hashPassword(pw, salt) PBKDF2 100k iterations SHA-256, verifyPassword(pw, hash, salt)",
+        "apps/api/src/infra/auth.ts: createSession(env, userId)와 verifySession(env, token) (token sha256 후 DB 조회)",
+        "apps/api/src/infra/d1.ts: query/exec 래퍼 + Drizzle 클라이언트 export",
+        "apps/api/src/infra/audit.ts: writeAuditLog(env, {adminId, actionType, targetUserId, payload})",
+        "vitest: hashPassword/verifyPassword 라운드트립 테스트, 잘못된 비밀번호는 false",
+        "vitest: PBKDF2 iterations >= 100000 어서션"
+      ]
+    },
+    {
+      "id": "US-006",
+      "title": "auth 라우트 (signup/login/logout/me) + pro middleware",
+      "priority": 6,
+      "passes": false,
+      "acceptanceCriteria": [
+        "POST /api/auth/signup: 이메일/비밀번호 검증 (zod) → users insert → 세션 발급 → Set-Cookie HttpOnly Secure SameSite=Lax",
+        "POST /api/auth/login: 자격증명 검증 → 세션 발급 → Set-Cookie",
+        "POST /api/auth/logout: 세션 삭제 → Set-Cookie maxAge=0",
+        "GET /api/auth/me: 쿠키 검증 → {id,email,displayName,isAdmin,proActive}",
+        "apps/api/src/domain/pro/checkProAccess.ts: 만료/상태 검사 후 boolean",
+        "vitest 라우트 테스트: signup→me 200, 로그아웃 후 me 401, pro 없는 사용자 + 유료 계산기 라우트 403, pro 부여 후 200"
+      ]
+    },
+    {
+      "id": "US-007",
+      "title": "계산기 4종 + 단위 테스트",
+      "priority": 7,
+      "passes": false,
+      "acceptanceCriteria": [
+        "apps/api/src/calculators/concrete-volume/{input,compute,view,meta,index}.ts 존재 + tier=free",
+        "apps/api/src/calculators/rebar-weight/{input,compute,view,meta,index}.ts 존재 + tier=free",
+        "apps/api/src/calculators/simple-beam-deflection/{input,compute,view,meta,index}.ts 존재 + tier=pro (등분포 + 집중하중 케이스)",
+        "apps/api/src/calculators/footing-bearing/{input,compute,view,meta,index}.ts 존재 + tier=pro",
+        "각 계산기 vitest 테스트 3 시나리오 이상 (정상/경계/NG)",
+        "compute 함수는 pure (env/io 호출 금지) - 테스트로 검증",
+        "toViewModel은 ViewModel2D 형태로 shapes/bounds/annotations 반환 - 비어있지 않음",
+        "domain/mgt/README.md: \"Phase 2\" 명시, 빌더 구현 없음"
+      ]
+    },
+    {
+      "id": "US-008",
+      "title": "/api/calc/[slug] + history + admin 라우트",
+      "priority": 8,
+      "passes": false,
+      "acceptanceCriteria": [
+        "POST /api/calc/:slug: 계산기 lookup → tier가 pro인데 비로그인 시 401, pro 아닌 로그인은 403, 정상 시 결과 + viewModel + history 기록",
+        "GET /api/history: 로그인 사용자 자신의 최근 10개 (created_at DESC)",
+        "GET /api/admin/users?q=: 이메일 부분일치 검색 (is_admin 미들웨어 통과)",
+        "POST /api/admin/users/:id/pro: {action:'grant'|'extend'|'revoke', years?, memo?} 멱등 처리 + audit_log 기록",
+        "GET /api/admin/audit?limit=100: 관리자만, 최신순 100건",
+        "vitest 통합 테스트: 4 라우트 통과 (Pages Functions 핸들러를 mock env로 호출)"
+      ]
+    },
+    {
+      "id": "US-009",
+      "title": "apps/web SPA 골격: Vite + Tailwind + router + layout + SvgViewer",
+      "priority": 9,
+      "passes": false,
+      "acceptanceCriteria": [
+        "apps/web/vite.config.ts: dev 프록시 /api → wrangler pages dev",
+        "Tailwind + PostCSS 설정 완료, src/styles/index.css 사용",
+        "react-router 라우트 등록: /, /login, /signup, /calc/:slug, /history, /admin, /admin/users, /admin/users/:id, /admin/audit, /pricing, /disclaimer, /terms",
+        "components/Layout.tsx: 4분할 도킹 그리드 (좌/중/우/하 고정) + 헤더 + 페이지 푸터 면책",
+        "components/viewer/SvgViewer.tsx: ViewModel2D 입력 → SVG 출력 (rectangle/line/polygon/arrow/dimension/text)",
+        "vitest + jsdom: SvgViewer가 주어진 ViewModel2D를 렌더 (text/rect 노드 개수 확인)",
+        "apps/web npm run build 성공"
+      ]
+    },
+    {
+      "id": "US-010",
+      "title": "auth/계산기/history/admin/정적 페이지 UI",
+      "priority": 10,
+      "passes": false,
+      "acceptanceCriteria": [
+        "features/<4개 계산기>/{InputForm.tsx, ResultPanel.tsx, index.ts}: zod+react-hook-form 사용, ResultPanel은 SvgViewer 사용",
+        "pages: Login, Signup (면책 동의 체크박스 필수), Logout, History(최근 10개), Admin(users list/detail/audit), Pricing/Disclaimer/Terms",
+        "lib/api.ts: fetch 래퍼 (credentials:'include', 401 → /login redirect)",
+        "lib/auth.tsx: AuthContext + useAuth() (me 호출)",
+        "모든 페이지 푸터에 \"본 서비스의 계산 결과는 정식 구조계산서가 아닌 pre-check용입니다\" 표시",
+        "apps/web npm run build 성공 + tsc --noEmit 0 에러"
+      ]
+    },
+    {
+      "id": "US-011",
+      "title": "통합 검증: 전체 빌드 + 전체 테스트 + 가이드 문서",
+      "priority": 11,
+      "passes": false,
+      "acceptanceCriteria": [
+        "루트 npm run -ws build 0 에러로 통과",
+        "루트 npm run -ws test 모든 워크스페이스 테스트 통과",
+        "루트 npm run -ws typecheck 0 에러",
+        "각 디렉토리(apps/web/src, apps/api/src, packages/shared/src, apps/api/src/calculators, apps/api/src/domain/mgt) 루트에 README.md (1문단)",
+        "AGENTS.md/CLAUDE.md에 7개 경계 규칙이 단정형으로 기록됨"
+      ]
+    }
+  ]
+}
