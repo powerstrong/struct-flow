@@ -1,16 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
+import type { AdminUserSummary as UserItem } from "@struct-flow/shared";
 import { api, ApiError } from "../../lib/api";
-
-interface UserItem {
-  id: string;
-  email: string;
-  displayName: string | null;
-  isAdmin: boolean;
-  proActive: boolean;
-  proExpiresAt: string | null;
-  createdAt: string;
-}
 
 export function AdminUserDetail() {
   const { id } = useParams<{ id: string }>();

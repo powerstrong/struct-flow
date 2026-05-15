@@ -64,19 +64,21 @@ export async function grantPro(env: Env, input: GrantInput): Promise<GrantResult
   return { entitlementId: id, expiresAt, extended: false };
 }
 
-export async function setProExpiresAt(env: Env, userId: string, expiresAt: string): Promise<void> {
-  await run(
+export async function setProExpiresAt(env: Env, userId: string, expiresAt: string): Promise<number> {
+  const res = await run(
     env,
     "UPDATE pro_entitlements SET expires_at = ? WHERE user_id = ? AND status = 'active'",
     expiresAt,
     userId,
   );
+  return Number(res.meta?.changes ?? 0);
 }
 
-export async function revokePro(env: Env, userId: string): Promise<void> {
-  await run(
+export async function revokePro(env: Env, userId: string): Promise<number> {
+  const res = await run(
     env,
     "UPDATE pro_entitlements SET status = 'revoked' WHERE user_id = ? AND status = 'active'",
     userId,
   );
+  return Number(res.meta?.changes ?? 0);
 }

@@ -50,6 +50,7 @@ function ResultPanel({ result }: ResultPanelProps<Result>) {
 export const rebarWeightFeature: CalculatorFeature<Input, Result> = {
   id: "rebar-weight",
   title: "철근 중량",
+  tier: "free",
   defaultInput: DEFAULT,
   InputForm,
   ResultPanel,

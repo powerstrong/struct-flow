@@ -54,6 +54,7 @@ function ResultPanel({ result }: ResultPanelProps<Result>) {
 export const footingBearingFeature: CalculatorFeature<Input, Result> = {
   id: "footing-bearing",
   title: "독립기초 접지압",
+  tier: "pro",
   defaultInput: DEFAULT,
   InputForm,
   ResultPanel,

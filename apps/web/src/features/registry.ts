@@ -1,4 +1,4 @@
-import type { CalculatorId } from "@struct-flow/shared";
+import type { CalculatorId, CalculatorTier } from "@struct-flow/shared";
 import type { ComponentType } from "react";
 import { concreteVolumeFeature } from "./concrete-volume";
 import { rebarWeightFeature } from "./rebar-weight";
@@ -18,6 +18,8 @@ export interface ResultPanelProps<R> {
 export interface CalculatorFeature<I = unknown, R = unknown> {
   id: CalculatorId;
   title: string;
+  /** Mirrors apps/api/src/calculators/<slug>/index.ts tier. Single source on the web side. */
+  tier: CalculatorTier;
   defaultInput: I;
   InputForm: ComponentType<InputFormProps<I>>;
   ResultPanel: ComponentType<ResultPanelProps<R>>;
@@ -29,3 +31,7 @@ export const features: Record<CalculatorId, CalculatorFeature> = {
   "simple-beam-deflection": simpleBeamDeflectionFeature as CalculatorFeature,
   "footing-bearing": footingBearingFeature as CalculatorFeature,
 };
+
+export function featureList(): CalculatorFeature[] {
+  return Object.values(features);
+}

@@ -59,6 +59,7 @@ function ResultPanel({ result }: ResultPanelProps<Result>) {
 export const simpleBeamDeflectionFeature: CalculatorFeature<Input, Result> = {
   id: "simple-beam-deflection",
   title: "단순보 처짐",
+  tier: "pro",
   defaultInput: DEFAULT,
   InputForm,
   ResultPanel,

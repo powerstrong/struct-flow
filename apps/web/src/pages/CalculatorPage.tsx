@@ -1,27 +1,14 @@
 import { useState } from "react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { features } from "../features/registry";
-import type { CalculatorId, ViewModel2D } from "@struct-flow/shared";
-import { isCalculatorId } from "@struct-flow/shared";
+import type { CalculatorId } from "@struct-flow/shared";
+import { isCalculatorId, type CalcRunResponse } from "@struct-flow/shared";
 import { api, ApiError } from "../lib/api";
 import { useAuth } from "../lib/auth";
 import { SvgViewer } from "../components/viewer/SvgViewer";
 import { DockLayout } from "../components/Layout";
 
-interface RunResponse {
-  toolSlug: CalculatorId;
-  toolVersion: string;
-  result: unknown;
-  viewModel: ViewModel2D | null;
-  recordedAt: string;
-}
-
-const META: Record<CalculatorId, { tier: "free" | "pro" }> = {
-  "concrete-volume": { tier: "free" },
-  "rebar-weight": { tier: "free" },
-  "simple-beam-deflection": { tier: "pro" },
-  "footing-bearing": { tier: "pro" },
-};
+type RunResponse = CalcRunResponse;
 
 export function CalculatorPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -35,7 +22,7 @@ export function CalculatorPage() {
     return <div className="p-8">알 수 없는 계산기입니다.</div>;
   }
   const feature = features[slug];
-  const tier = META[slug].tier;
+  const tier = feature.tier;
 
   async function run(input: unknown) {
     setError(null);

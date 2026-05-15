@@ -22,6 +22,8 @@ export function compute(input: FootingBearingInput): FootingBearingResult {
   const A = L * B;
   const qAvg = P / A;
   if (P === 0) {
+    // No axial load and no moment → trivially zero pressure (safe).
+    // (P=0 with M>0 is rejected by inputSchema as a physically inconsistent free body.)
     return {
       areaM2: A,
       eccentricityM: 0,

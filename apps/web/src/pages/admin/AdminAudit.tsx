@@ -1,14 +1,6 @@
 import { useEffect, useState } from "react";
+import type { AdminAuditItem as AuditItem } from "@struct-flow/shared";
 import { api } from "../../lib/api";
-
-interface AuditItem {
-  id: string;
-  adminUserId: string;
-  actionType: string;
-  targetUserId: string | null;
-  payloadJson: unknown;
-  createdAt: string;
-}
 
 export function AdminAudit() {
   const [items, setItems] = useState<AuditItem[]>([]);

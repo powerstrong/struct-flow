@@ -1,14 +1,8 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
+import type { MeResponse } from "@struct-flow/shared";
 import { api, ApiError } from "./api";
 
-export interface Me {
-  id: string;
-  email: string;
-  displayName: string | null;
-  isAdmin: boolean;
-  proActive: boolean;
-  proExpiresAt: string | null;
-}
+export type Me = MeResponse;
 
 interface AuthCtx {
   me: Me | null;

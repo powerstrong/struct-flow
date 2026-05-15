@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { json, badRequest, unauthorized, forbidden, notFound } from "../http";
+import { json, badRequest, unauthorized, forbidden, notFound, error } from "../http";
 import { getOne, getAll } from "../infra/d1";
 import { requireSession } from "../infra/session-store";
 import { writeAuditLog } from "../infra/audit";
@@ -101,11 +101,17 @@ export async function adminProRoute(
     });
     resultPayload = out;
   } else if (parsed.data.action === "revoke") {
-    await revokePro(env, targetUserId);
-    resultPayload = { ok: true };
+    const changed = await revokePro(env, targetUserId);
+    if (changed === 0) {
+      return error("no_active_entitlement", "활성 Pro 권한이 없습니다.", 409);
+    }
+    resultPayload = { ok: true, changed };
   } else {
-    await setProExpiresAt(env, targetUserId, parsed.data.expiresAt);
-    resultPayload = { ok: true, expiresAt: parsed.data.expiresAt };
+    const changed = await setProExpiresAt(env, targetUserId, parsed.data.expiresAt);
+    if (changed === 0) {
+      return error("no_active_entitlement", "활성 Pro 권한이 없습니다. 먼저 grant 하세요.", 409);
+    }
+    resultPayload = { ok: true, expiresAt: parsed.data.expiresAt, changed };
   }
 
   await writeAuditLog(env, {

@@ -151,9 +151,9 @@ describe("GET /api/history", () => {
     expect(res.status).toBe(401);
   });
 
-  it("returns user's own most-recent 10 entries", async () => {
+  it("returns user's own most-recent 10 entries in DESCENDING created_at order", async () => {
     const { cookie, userId } = await signupAndGetCookie(env, "h@x.com");
-    // Seed 12 history rows.
+    // Seed 12 history rows, oldest first.
     const stmt = env.__db.prepare(
       "INSERT INTO calc_history (id, user_id, tool_slug, tool_version, input_json, result_json, created_at) VALUES (?, ?, 'concrete-volume', '1.0.0', '{}', '{}', ?)",
     );
@@ -162,8 +162,17 @@ describe("GET /api/history", () => {
     }
     const res = await handle(new Request("https://x.test/api/history", { headers: { cookie } }), env);
     expect(res.status).toBe(200);
-    const body = await json<unknown[]>(res);
+    const body = await json<Array<{ id: string; createdAt: string }>>(res);
     expect(body).toHaveLength(10);
+    // Most-recent first: id "h-11", "h-10", ..., "h-2".
+    expect(body[0]?.id).toBe("h-11");
+    expect(body[9]?.id).toBe("h-2");
+    // Strictly monotonic descending createdAt.
+    for (let i = 1; i < body.length; i++) {
+      expect(new Date(body[i - 1]!.createdAt).getTime()).toBeGreaterThan(
+        new Date(body[i]!.createdAt).getTime(),
+      );
+    }
   });
 
   it("does not leak other users' history", async () => {
@@ -245,5 +254,141 @@ describe("admin routes", () => {
     );
     const after = await handle(new Request("https://x.test/api/auth/me", { headers: { cookie: target.cookie } }), env);
     expect((await json<{ proActive: boolean }>(after)).proActive).toBe(false);
+  });
+
+  it("extend on a Pro user appends years from current expiry + writes pro:extend audit", async () => {
+    const admin = await signupAndGetCookie(env, "admin@x.com");
+    await makeAdmin(env, admin.userId);
+    const target = await signupAndGetCookie(env, "target@x.com");
+
+    const grant = await handle(
+      new Request(`https://x.test/api/admin/users/${target.userId}/pro`, {
+        method: "POST",
+        headers: { "content-type": "application/json", cookie: admin.cookie },
+        body: JSON.stringify({ action: "grant", years: 1, memo: "first grant" }),
+      }),
+      env,
+    );
+    const grantBody = await json<{ result: { expiresAt: string }; proStatus: { expiresAt: string } }>(grant);
+    const firstExpiry = new Date(grantBody.proStatus.expiresAt).getTime();
+
+    const extend = await handle(
+      new Request(`https://x.test/api/admin/users/${target.userId}/pro`, {
+        method: "POST",
+        headers: { "content-type": "application/json", cookie: admin.cookie },
+        body: JSON.stringify({ action: "extend", years: 2, memo: "renewal" }),
+      }),
+      env,
+    );
+    expect(extend.status).toBe(200);
+    const extendBody = await json<{ proStatus: { expiresAt: string } }>(extend);
+    const newExpiry = new Date(extendBody.proStatus.expiresAt).getTime();
+    // ~2 years later than the previous expiry (allow 24h skew).
+    const expectedDeltaMs = 2 * 365 * 24 * 60 * 60 * 1000;
+    expect(newExpiry - firstExpiry).toBeGreaterThan(expectedDeltaMs - 86_400_000);
+
+    const audit = await handle(new Request("https://x.test/api/admin/audit", { headers: { cookie: admin.cookie } }), env);
+    const auditBody = await json<Array<{ actionType: string }>>(audit);
+    const types = auditBody.map((a) => a.actionType);
+    expect(types).toContain("pro:extend");
+    expect(types).toContain("pro:grant");
+  });
+
+  it("set-expires-at on an active Pro updates the expiry + writes audit row", async () => {
+    const admin = await signupAndGetCookie(env, "admin@x.com");
+    await makeAdmin(env, admin.userId);
+    const target = await signupAndGetCookie(env, "target@x.com");
+
+    await handle(
+      new Request(`https://x.test/api/admin/users/${target.userId}/pro`, {
+        method: "POST",
+        headers: { "content-type": "application/json", cookie: admin.cookie },
+        body: JSON.stringify({ action: "grant", years: 1 }),
+      }),
+      env,
+    );
+
+    const newExpiresAt = "2030-12-31T00:00:00.000Z";
+    const set = await handle(
+      new Request(`https://x.test/api/admin/users/${target.userId}/pro`, {
+        method: "POST",
+        headers: { "content-type": "application/json", cookie: admin.cookie },
+        body: JSON.stringify({ action: "set-expires-at", expiresAt: newExpiresAt, memo: "manual" }),
+      }),
+      env,
+    );
+    expect(set.status).toBe(200);
+    const body = await json<{ proStatus: { expiresAt: string } }>(set);
+    expect(body.proStatus.expiresAt).toBe(newExpiresAt);
+
+    const audit = await handle(new Request("https://x.test/api/admin/audit", { headers: { cookie: admin.cookie } }), env);
+    const types = (await json<Array<{ actionType: string }>>(audit)).map((a) => a.actionType);
+    expect(types).toContain("pro:set-expires-at");
+  });
+
+  it("set-expires-at without an active Pro returns 409 (no rows changed)", async () => {
+    const admin = await signupAndGetCookie(env, "admin@x.com");
+    await makeAdmin(env, admin.userId);
+    const target = await signupAndGetCookie(env, "target@x.com");
+
+    const res = await handle(
+      new Request(`https://x.test/api/admin/users/${target.userId}/pro`, {
+        method: "POST",
+        headers: { "content-type": "application/json", cookie: admin.cookie },
+        body: JSON.stringify({ action: "set-expires-at", expiresAt: "2030-01-01T00:00:00.000Z" }),
+      }),
+      env,
+    );
+    expect(res.status).toBe(409);
+  });
+
+  it("revoke without an active Pro returns 409", async () => {
+    const admin = await signupAndGetCookie(env, "admin@x.com");
+    await makeAdmin(env, admin.userId);
+    const target = await signupAndGetCookie(env, "target@x.com");
+
+    const res = await handle(
+      new Request(`https://x.test/api/admin/users/${target.userId}/pro`, {
+        method: "POST",
+        headers: { "content-type": "application/json", cookie: admin.cookie },
+        body: JSON.stringify({ action: "revoke" }),
+      }),
+      env,
+    );
+    expect(res.status).toBe(409);
+  });
+});
+
+describe("footing-bearing physical-consistency guard (Pro-authenticated)", () => {
+  async function asPro(): Promise<string> {
+    const { cookie, userId } = await signupAndGetCookie(env, "pro@x.com");
+    await grantPro(env, { userId, years: 1, grantedBy: userId });
+    return cookie;
+  }
+
+  it("rejects P=0 with M>0 with 400 (free body — physically inconsistent)", async () => {
+    const cookie = await asPro();
+    const res = await handle(
+      new Request("https://x.test/api/calc/footing-bearing", {
+        method: "POST",
+        headers: { "content-type": "application/json", cookie },
+        body: JSON.stringify({ input: { lengthM: 3, widthM: 2, axialKN: 0, momentKNm: 100, qAllowKPa: 200 } }),
+      }),
+      env,
+    );
+    expect(res.status).toBe(400);
+  });
+
+  it("accepts P=0 with M=0 (trivial zero pressure)", async () => {
+    const cookie = await asPro();
+    const res = await handle(
+      new Request("https://x.test/api/calc/footing-bearing", {
+        method: "POST",
+        headers: { "content-type": "application/json", cookie },
+        body: JSON.stringify({ input: { lengthM: 3, widthM: 2, axialKN: 0, momentKNm: 0, qAllowKPa: 200 } }),
+      }),
+      env,
+    );
+    expect(res.status).toBe(200);
   });
 });

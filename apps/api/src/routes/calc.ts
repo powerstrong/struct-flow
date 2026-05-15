@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { json, badRequest, unauthorized, forbidden, notFound, error } from "../http";
 import { findCalculator, calculators } from "../calculators/registry";
-import { getOne, run, nowIso } from "../infra/d1";
+import { getAll, run, nowIso } from "../infra/d1";
 import { newUuid } from "../infra/ids";
 import { requireSession } from "../infra/session-store";
 import { checkProAccess } from "../domain/pro/checkProAccess";
@@ -84,10 +84,24 @@ async function safeJson(req: Request): Promise<unknown> {
   }
 }
 
+interface HistoryRow {
+  id: string;
+  tool_slug: string;
+  tool_version: string;
+  input_json: string;
+  result_json: string;
+  created_at: string;
+}
+
 export async function historyRoute(req: Request, env: Env): Promise<Response> {
   const session = await requireSession(env, req);
   if (!session) return unauthorized();
-  const rows = await getAllHistory(env, session.userId, 10);
+  const rows = await getAll<HistoryRow>(
+    env,
+    "SELECT id, tool_slug, tool_version, input_json, result_json, created_at FROM calc_history WHERE user_id = ? ORDER BY created_at DESC LIMIT ?",
+    session.userId,
+    10,
+  );
   return json(
     rows.map((r) => ({
       id: r.id,
@@ -100,23 +114,6 @@ export async function historyRoute(req: Request, env: Env): Promise<Response> {
   );
 }
 
-interface HistoryRow {
-  id: string;
-  tool_slug: string;
-  tool_version: string;
-  input_json: string;
-  result_json: string;
-  created_at: string;
-}
-
-async function getAllHistory(env: Env, userId: string, limit: number): Promise<HistoryRow[]> {
-  const stmt = env.DB.prepare(
-    "SELECT id, tool_slug, tool_version, input_json, result_json, created_at FROM calc_history WHERE user_id = ? ORDER BY created_at DESC LIMIT ?",
-  ).bind(userId, limit);
-  const res = await stmt.all<HistoryRow>();
-  return res.results ?? [];
-}
-
 function safeParse(s: string): unknown {
   try {
     return JSON.parse(s);
@@ -124,6 +121,3 @@ function safeParse(s: string): unknown {
     return null;
   }
 }
-
-// silence unused import in callers
-void getOne;

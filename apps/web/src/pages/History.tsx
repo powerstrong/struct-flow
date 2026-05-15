@@ -1,16 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import type { HistoryItem } from "@struct-flow/shared";
 import { api, ApiError } from "../lib/api";
 import { useAuth } from "../lib/auth";
-
-interface HistoryItem {
-  id: string;
-  toolSlug: string;
-  toolVersion: string;
-  inputJson: unknown;
-  resultJson: unknown;
-  createdAt: string;
-}
 
 export function History() {
   const { me, loading } = useAuth();

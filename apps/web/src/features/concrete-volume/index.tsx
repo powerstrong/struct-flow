@@ -40,6 +40,7 @@ function ResultPanel({ result }: ResultPanelProps<Result>) {
 export const concreteVolumeFeature: CalculatorFeature<Input, Result> = {
   id: "concrete-volume",
   title: "콘크리트 물량",
+  tier: "free",
   defaultInput: DEFAULT,
   InputForm,
   ResultPanel,
