@@ -357,6 +357,53 @@ describe("admin routes", () => {
     );
     expect(res.status).toBe(409);
   });
+
+  it("revoke on a NATURALLY-EXPIRED entitlement (status='active', expires_at<now) returns 409", async () => {
+    const admin = await signupAndGetCookie(env, "admin@x.com");
+    await makeAdmin(env, admin.userId);
+    const target = await signupAndGetCookie(env, "target@x.com");
+
+    env.__db
+      .prepare(
+        "INSERT INTO pro_entitlements (id, user_id, plan, status, granted_at, expires_at, granted_by, source) VALUES ('p1', ?, 'pro-1y', 'active', ?, ?, ?, 'manual')",
+      )
+      .run(target.userId, "2020-01-01T00:00:00.000Z", "2020-12-31T00:00:00.000Z", admin.userId);
+
+    const res = await handle(
+      new Request(`https://x.test/api/admin/users/${target.userId}/pro`, {
+        method: "POST",
+        headers: { "content-type": "application/json", cookie: admin.cookie },
+        body: JSON.stringify({ action: "revoke" }),
+      }),
+      env,
+    );
+    expect(res.status).toBe(409);
+  });
+
+  it("set-expires-at on a NATURALLY-EXPIRED entitlement returns 409 (no silent revival)", async () => {
+    const admin = await signupAndGetCookie(env, "admin@x.com");
+    await makeAdmin(env, admin.userId);
+    const target = await signupAndGetCookie(env, "target@x.com");
+
+    env.__db
+      .prepare(
+        "INSERT INTO pro_entitlements (id, user_id, plan, status, granted_at, expires_at, granted_by, source) VALUES ('p2', ?, 'pro-1y', 'active', ?, ?, ?, 'manual')",
+      )
+      .run(target.userId, "2020-01-01T00:00:00.000Z", "2020-12-31T00:00:00.000Z", admin.userId);
+
+    const res = await handle(
+      new Request(`https://x.test/api/admin/users/${target.userId}/pro`, {
+        method: "POST",
+        headers: { "content-type": "application/json", cookie: admin.cookie },
+        body: JSON.stringify({ action: "set-expires-at", expiresAt: "2099-12-31T00:00:00.000Z" }),
+      }),
+      env,
+    );
+    expect(res.status).toBe(409);
+
+    const me = await handle(new Request("https://x.test/api/auth/me", { headers: { cookie: target.cookie } }), env);
+    expect((await json<{ proActive: boolean }>(me)).proActive).toBe(false);
+  });
 });
 
 describe("footing-bearing physical-consistency guard (Pro-authenticated)", () => {

@@ -64,21 +64,30 @@ export async function grantPro(env: Env, input: GrantInput): Promise<GrantResult
   return { entitlementId: id, expiresAt, extended: false };
 }
 
+// "Active" is defined as status='active' AND expires_at > now.
+// All mutation helpers MUST use the same predicate as checkProAccess to prevent
+// silent revival of naturally-expired entitlements (status stays 'active' until
+// an admin action transitions it, so timestamp must be checked here too).
+
 export async function setProExpiresAt(env: Env, userId: string, expiresAt: string): Promise<number> {
+  const now = nowIso();
   const res = await run(
     env,
-    "UPDATE pro_entitlements SET expires_at = ? WHERE user_id = ? AND status = 'active'",
+    "UPDATE pro_entitlements SET expires_at = ? WHERE user_id = ? AND status = 'active' AND expires_at > ?",
     expiresAt,
     userId,
+    now,
   );
   return Number(res.meta?.changes ?? 0);
 }
 
 export async function revokePro(env: Env, userId: string): Promise<number> {
+  const now = nowIso();
   const res = await run(
     env,
-    "UPDATE pro_entitlements SET status = 'revoked' WHERE user_id = ? AND status = 'active'",
+    "UPDATE pro_entitlements SET status = 'revoked' WHERE user_id = ? AND status = 'active' AND expires_at > ?",
     userId,
+    now,
   );
   return Number(res.meta?.changes ?? 0);
 }

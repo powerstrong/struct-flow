@@ -15,4 +15,6 @@ coverage/
 .idea/
 .omc/state/
 .omc/sessions/
+.omc/artifacts/
 .omc/install.log
+.omc/project-memory.json
