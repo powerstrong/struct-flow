@@ -22,7 +22,7 @@ const LOGIN_URL = "https://x.test/api/auth/login";
 const LOGOUT_URL = "https://x.test/api/auth/logout";
 const ME_URL = "https://x.test/api/auth/me";
 
-const credentials = { email: "a@x.com", password: "pa$$word-1", agreeDisclaimer: true } as const;
+const credentials = { email: "a@x.com", password: "pa$$word-1" } as const;
 
 async function signup(env: Env, body: Record<string, unknown> = credentials): Promise<Response> {
   return handle(
@@ -72,13 +72,8 @@ describe("POST /api/auth/signup", () => {
     expect(setCookie).toContain("SameSite=Lax");
   });
 
-  it("rejects missing disclaimer agreement", async () => {
-    const res = await signup(env, { email: "b@x.com", password: "pa$$word-1" });
-    expect(res.status).toBe(400);
-  });
-
   it("rejects short password (<8)", async () => {
-    const res = await signup(env, { email: "b@x.com", password: "short", agreeDisclaimer: true });
+    const res = await signup(env, { email: "b@x.com", password: "short" });
     expect(res.status).toBe(400);
   });
 
@@ -89,9 +84,9 @@ describe("POST /api/auth/signup", () => {
   });
 
   it("normalizes email to lowercase", async () => {
-    const res = await signup(env, { email: "A@X.com", password: "pa$$word-1", agreeDisclaimer: true });
+    const res = await signup(env, { email: "A@X.com", password: "pa$$word-1" });
     expect(res.status).toBe(201);
-    const dup = await signup(env, { email: "a@x.COM", password: "pa$$word-1", agreeDisclaimer: true });
+    const dup = await signup(env, { email: "a@x.COM", password: "pa$$word-1" });
     expect(dup.status).toBe(409);
   });
 });

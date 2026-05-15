@@ -20,7 +20,6 @@ const signupSchema = z.object({
   email: emailSchema,
   password: passwordSchema,
   displayName: z.string().trim().min(1).max(60).optional(),
-  agreeDisclaimer: z.literal(true),
 });
 
 const loginSchema = z.object({

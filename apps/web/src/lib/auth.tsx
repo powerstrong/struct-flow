@@ -8,7 +8,7 @@ interface AuthCtx {
   me: Me | null;
   loading: boolean;
   refresh: () => Promise<void>;
-  signup: (email: string, password: string, displayName: string | undefined, agreeDisclaimer: boolean) => Promise<Me>;
+  signup: (email: string, password: string, displayName?: string) => Promise<Me>;
   login: (email: string, password: string) => Promise<Me>;
   logout: () => Promise<void>;
 }
@@ -38,10 +38,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     void refresh();
   }, [refresh]);
 
-  const signup = useCallback<AuthCtx["signup"]>(async (email, password, displayName, agreeDisclaimer) => {
+  const signup = useCallback<AuthCtx["signup"]>(async (email, password, displayName) => {
     const next = await api<Me>("/api/auth/signup", {
       method: "POST",
-      body: JSON.stringify({ email, password, displayName, agreeDisclaimer }),
+      body: JSON.stringify({ email, password, displayName }),
     });
     setMe(next);
     return next;

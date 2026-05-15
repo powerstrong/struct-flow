@@ -13,7 +13,7 @@ async function signupAndGetCookie(env: Env, email: string): Promise<{ cookie: st
     new Request("https://x.test/api/auth/signup", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ email, password: "pa$$word-1", agreeDisclaimer: true }),
+      body: JSON.stringify({ email, password: "pa$$word-1" }),
     }),
     env,
   );

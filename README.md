@@ -1,12 +1,6 @@
 # Struct Flow
 
-구조설계 엔지니어를 위한 **pre-check 워크벤치** (MVP).
-
-MIDAS Gen 모델링 전에 빠른 감/검산을 할 수 있도록, 서버에서 계산식을 실행하고 2D SVG로 결과를 시각화하는 웹 서비스입니다.
-
-## ⚠️ 면책
-
-**본 서비스의 계산 결과는 정식 구조계산서가 아닌 pre-check 용도입니다.** 실제 설계/시공에 사용 시 반드시 면허를 보유한 구조기술사의 검증을 받아야 합니다.
+구조설계 엔지니어용 워크벤치. 서버에서 계산식을 실행하고 2D SVG로 결과를 시각화한다.
 
 ## 스택
 
@@ -29,11 +23,25 @@ packages/shared # 양쪽이 공유하는 타입
 npm install
 npm run -ws build
 npm run -ws test
+
+# 로컬 실행
+npx wrangler d1 migrations apply structmate-dev-db --local   # apps/api 안에서
+npm run dev -w @struct-flow/api    # http://127.0.0.1:8788
+npm run dev -w @struct-flow/web    # http://localhost:5173 (proxies /api → 8788)
 ```
 
 자세한 작업 가이드라인은 [AGENTS.md](./AGENTS.md)를 참조하세요.
 
-## Phase 2 (MVP 이후)
+## 계산기
 
-- MGT command 출력 (구조 전문가 리뷰 채널 확보 후)
-- 결제 연동, 비밀번호 재설정 이메일, 본격 위자드 엔진
+| Slug | Tier | 설명 |
+|---|---|---|
+| `concrete-volume` | free | 콘크리트 물량 (폭 × 길이 × 두께) |
+| `rebar-weight` | free | 철근 중량 (D10..D29 KDS 단위중량) |
+| `simple-beam-deflection` | pro | 단순보 처짐 (UDL / 중앙 집중) |
+| `footing-bearing` | pro | 독립기초 접지압 (편심 / kern) |
+
+## Phase 2 (예정)
+
+- MGT command 출력
+- 결제 연동, 비밀번호 재설정 이메일, 본격 위자드 엔진, 3D 뷰어

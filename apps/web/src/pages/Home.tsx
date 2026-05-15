@@ -1,5 +1,4 @@
 import { Link } from "react-router-dom";
-import { DISCLAIMER_TEXT } from "../components/Disclaimer";
 import { featureList } from "../features/registry";
 
 export function Home() {
@@ -7,15 +6,11 @@ export function Home() {
   return (
     <div className="max-w-5xl mx-auto px-6 py-10">
       <h1 className="text-3xl font-bold text-ink mb-2">Struct Flow</h1>
-      <p className="text-gray-600 mb-6">
-        구조설계 엔지니어를 위한 pre-check 워크벤치. 서버에서 계산식을 실행하고 2D 도식으로 결과를 확인합니다.
+      <p className="text-gray-600 mb-8">
+        구조설계 워크벤치. 서버에서 계산식을 실행하고 2D 도식으로 결과를 확인합니다.
       </p>
 
-      <div className="bg-amber-50 border border-amber-200 rounded p-4 text-sm text-amber-900 mb-8">
-        ⚠️ {DISCLAIMER_TEXT}
-      </div>
-
-      <h2 className="text-lg font-semibold text-ink mb-3">MVP 계산기</h2>
+      <h2 className="text-lg font-semibold text-ink mb-3">계산기</h2>
       <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {tools.map((t) => (
           <li key={t.id}>

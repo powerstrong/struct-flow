@@ -11,7 +11,6 @@ import { AdminUserDetail } from "./pages/admin/AdminUserDetail";
 import { AdminAudit } from "./pages/admin/AdminAudit";
 import { AdminDashboard } from "./pages/admin/AdminDashboard";
 import { Pricing } from "./pages/Pricing";
-import { DisclaimerPage } from "./pages/DisclaimerPage";
 import { Terms } from "./pages/Terms";
 import { NotFound } from "./pages/NotFound";
 
@@ -26,7 +25,6 @@ export function App() {
         <Route path="calc/:slug" element={<CalculatorPage />} />
         <Route path="history" element={<History />} />
         <Route path="pricing" element={<Pricing />} />
-        <Route path="disclaimer" element={<DisclaimerPage />} />
         <Route path="terms" element={<Terms />} />
         <Route path="admin" element={<AdminLayout />}>
           <Route index element={<AdminDashboard />} />

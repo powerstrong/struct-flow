@@ -3,13 +3,11 @@ import { useForm } from "react-hook-form";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../lib/auth";
 import { ApiError } from "../lib/api";
-import { DISCLAIMER_TEXT } from "../components/Disclaimer";
 
 interface FormValues {
   email: string;
   password: string;
   displayName?: string;
-  agreeDisclaimer: boolean;
 }
 
 export function Signup() {
@@ -21,7 +19,7 @@ export function Signup() {
   async function onSubmit(values: FormValues) {
     setServerError(null);
     try {
-      await signup(values.email, values.password, values.displayName || undefined, values.agreeDisclaimer);
+      await signup(values.email, values.password, values.displayName || undefined);
       navigate("/");
     } catch (err) {
       setServerError(err instanceof ApiError ? err.message : "회원가입 실패");
@@ -55,19 +53,6 @@ export function Signup() {
             {...register("displayName", { maxLength: { value: 60, message: "60자 이하" } })}
           />
         </Field>
-
-        <div className="bg-amber-50 border border-amber-200 rounded p-3 text-xs text-amber-900">
-          {DISCLAIMER_TEXT}
-        </div>
-        <label className="flex items-start gap-2 text-sm">
-          <input
-            type="checkbox"
-            className="mt-1"
-            {...register("agreeDisclaimer", { required: "면책 사항에 동의해야 가입할 수 있습니다." })}
-          />
-          <span>면책 사항을 읽고 동의합니다.</span>
-        </label>
-        {errors.agreeDisclaimer && <p className="text-xs text-red-600">{errors.agreeDisclaimer.message}</p>}
 
         {serverError && <p className="text-red-600 text-sm">{serverError}</p>}
         <button

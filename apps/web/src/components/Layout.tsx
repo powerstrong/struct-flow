@@ -1,6 +1,5 @@
 import { Link, NavLink, Outlet } from "react-router-dom";
 import { useAuth } from "../lib/auth";
-import { Disclaimer } from "./Disclaimer";
 
 export function Layout() {
   const { me, logout } = useAuth();
@@ -8,7 +7,7 @@ export function Layout() {
     <div className="min-h-full flex flex-col">
       <header className="bg-white border-b border-gray-200 px-6 h-14 flex items-center justify-between">
         <Link to="/" className="font-bold text-lg text-ink tracking-tight">
-          Struct Flow <span className="text-xs font-normal text-gray-500 align-middle">pre-check workbench</span>
+          Struct Flow <span className="text-xs font-normal text-gray-500 align-middle">workbench</span>
         </Link>
         <nav className="flex items-center gap-4 text-sm">
           <NavLink to="/calc/concrete-volume" className={navLinkClass}>계산기</NavLink>
@@ -41,15 +40,12 @@ export function Layout() {
       </main>
 
       <footer className="border-t border-gray-200 bg-white text-xs text-gray-500 px-6 py-3 flex flex-wrap items-center justify-between gap-2">
-        <span>© Struct Flow · MVP</span>
+        <span>© Struct Flow</span>
         <span className="flex gap-3">
-          <Link to="/disclaimer" className="hover:text-ink">면책</Link>
           <Link to="/terms" className="hover:text-ink">약관</Link>
           <Link to="/pricing" className="hover:text-ink">요금제</Link>
         </span>
       </footer>
-
-      <Disclaimer />
     </div>
   );
 }
