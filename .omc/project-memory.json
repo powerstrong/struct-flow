@@ -1,0 +1,380 @@
+{
+  "version": "1.0.0",
+  "lastScanned": 1778864728861,
+  "projectRoot": "C:\\src\\incubating\\struct-flow",
+  "techStack": {
+    "languages": [
+      {
+        "name": "JavaScript/TypeScript",
+        "version": ">=20.0.0",
+        "confidence": "high",
+        "markers": [
+          "package.json"
+        ]
+      }
+    ],
+    "frameworks": [],
+    "packageManager": "npm",
+    "runtime": "Node.js 20.0.0"
+  },
+  "build": {
+    "buildCommand": "npm run build",
+    "testCommand": "npm test",
+    "lintCommand": "npm run lint",
+    "devCommand": null,
+    "scripts": {
+      "build": "npm run -ws --if-present build",
+      "test": "npm run -ws --if-present test",
+      "typecheck": "npm run -ws --if-present typecheck",
+      "lint": "npm run -ws --if-present lint",
+      "dev:web": "npm run -w @struct-flow/web dev",
+      "dev:api": "npm run -w @struct-flow/api dev"
+    }
+  },
+  "conventions": {
+    "namingStyle": null,
+    "importStyle": null,
+    "testPattern": null,
+    "fileOrganization": null
+  },
+  "structure": {
+    "isMonorepo": true,
+    "workspaces": [
+      "apps/*",
+      "packages/*"
+    ],
+    "mainDirectories": [],
+    "gitBranches": null
+  },
+  "customNotes": [],
+  "directoryMap": {
+    "apps": {
+      "path": "apps",
+      "purpose": null,
+      "fileCount": 0,
+      "lastAccessed": 1778864728727,
+      "keyFiles": []
+    },
+    "packages": {
+      "path": "packages",
+      "purpose": null,
+      "fileCount": 0,
+      "lastAccessed": 1778864728728,
+      "keyFiles": []
+    },
+    "apps\\api": {
+      "path": "apps\\api",
+      "purpose": "API routes",
+      "fileCount": 4,
+      "lastAccessed": 1778864728743,
+      "keyFiles": [
+        "package.json",
+        "tsconfig.json",
+        "vitest.config.ts"
+      ]
+    }
+  },
+  "hotPaths": [
+    {
+      "path": "apps\\api\\test\\auth-routes.test.ts",
+      "accessCount": 6,
+      "lastAccessed": 1778864927334,
+      "type": "file"
+    },
+    {
+      "path": "apps\\api\\src\\index.ts",
+      "accessCount": 4,
+      "lastAccessed": 1778865222127,
+      "type": "file"
+    },
+    {
+      "path": "apps\\api\\test\\helpers\\d1.ts",
+      "accessCount": 2,
+      "lastAccessed": 1778864908425,
+      "type": "file"
+    },
+    {
+      "path": "apps\\api\\src\\calculators\\registry.ts",
+      "accessCount": 2,
+      "lastAccessed": 1778865137430,
+      "type": "file"
+    },
+    {
+      "path": "apps\\api\\test\\calculators.test.ts",
+      "accessCount": 2,
+      "lastAccessed": 1778865166499,
+      "type": "file"
+    },
+    {
+      "path": "apps\\api\\vitest.config.ts",
+      "accessCount": 1,
+      "lastAccessed": 1778864775087,
+      "type": "file"
+    },
+    {
+      "path": "apps\\api\\test\\migrations.test.ts",
+      "accessCount": 1,
+      "lastAccessed": 1778864790674,
+      "type": "file"
+    },
+    {
+      "path": "apps\\api\\src\\routes\\auth.ts",
+      "accessCount": 1,
+      "lastAccessed": 1778864842896,
+      "type": "file"
+    },
+    {
+      "path": "apps\\api\\src\\domain\\pro\\grantPro.ts",
+      "accessCount": 1,
+      "lastAccessed": 1778864852903,
+      "type": "file"
+    },
+    {
+      "path": "apps\\api\\src\\domain\\pro\\README.md",
+      "accessCount": 1,
+      "lastAccessed": 1778864857793,
+      "type": "file"
+    },
+    {
+      "path": "apps\\api\\src\\calculators\\concrete-volume\\input.ts",
+      "accessCount": 1,
+      "lastAccessed": 1778864956442,
+      "type": "file"
+    },
+    {
+      "path": "apps\\api\\src\\calculators\\concrete-volume\\compute.ts",
+      "accessCount": 1,
+      "lastAccessed": 1778864961985,
+      "type": "file"
+    },
+    {
+      "path": "apps\\api\\src\\calculators\\concrete-volume\\view.ts",
+      "accessCount": 1,
+      "lastAccessed": 1778864967006,
+      "type": "file"
+    },
+    {
+      "path": "apps\\api\\src\\calculators\\concrete-volume\\meta.ts",
+      "accessCount": 1,
+      "lastAccessed": 1778864973226,
+      "type": "file"
+    },
+    {
+      "path": "apps\\api\\src\\calculators\\concrete-volume\\index.ts",
+      "accessCount": 1,
+      "lastAccessed": 1778864975663,
+      "type": "file"
+    },
+    {
+      "path": "apps\\api\\src\\calculators\\rebar-weight\\input.ts",
+      "accessCount": 1,
+      "lastAccessed": 1778864980682,
+      "type": "file"
+    },
+    {
+      "path": "apps\\api\\src\\calculators\\rebar-weight\\compute.ts",
+      "accessCount": 1,
+      "lastAccessed": 1778864984352,
+      "type": "file"
+    },
+    {
+      "path": "apps\\api\\src\\calculators\\rebar-weight\\view.ts",
+      "accessCount": 1,
+      "lastAccessed": 1778864992253,
+      "type": "file"
+    },
+    {
+      "path": "apps\\api\\src\\calculators\\rebar-weight\\meta.ts",
+      "accessCount": 1,
+      "lastAccessed": 1778864997348,
+      "type": "file"
+    },
+    {
+      "path": "apps\\api\\src\\calculators\\rebar-weight\\index.ts",
+      "accessCount": 1,
+      "lastAccessed": 1778864999300,
+      "type": "file"
+    },
+    {
+      "path": "apps\\api\\src\\calculators\\simple-beam-deflection\\compute.ts",
+      "accessCount": 1,
+      "lastAccessed": 1778865012316,
+      "type": "file"
+    },
+    {
+      "path": "apps\\api\\src\\calculators\\simple-beam-deflection\\view.ts",
+      "accessCount": 1,
+      "lastAccessed": 1778865028016,
+      "type": "file"
+    },
+    {
+      "path": "apps\\api\\src\\calculators\\simple-beam-deflection\\meta.ts",
+      "accessCount": 1,
+      "lastAccessed": 1778865035899,
+      "type": "file"
+    },
+    {
+      "path": "apps\\api\\src\\calculators\\simple-beam-deflection\\index.ts",
+      "accessCount": 1,
+      "lastAccessed": 1778865037799,
+      "type": "file"
+    },
+    {
+      "path": "apps\\api\\src\\calculators\\footing-bearing\\input.ts",
+      "accessCount": 1,
+      "lastAccessed": 1778865042884,
+      "type": "file"
+    },
+    {
+      "path": "apps\\api\\src\\calculators\\footing-bearing\\compute.ts",
+      "accessCount": 1,
+      "lastAccessed": 1778865051373,
+      "type": "file"
+    },
+    {
+      "path": "apps\\api\\src\\calculators\\footing-bearing\\view.ts",
+      "accessCount": 1,
+      "lastAccessed": 1778865063333,
+      "type": "file"
+    },
+    {
+      "path": "apps\\api\\src\\calculators\\footing-bearing\\meta.ts",
+      "accessCount": 1,
+      "lastAccessed": 1778865070958,
+      "type": "file"
+    },
+    {
+      "path": "apps\\api\\src\\calculators\\footing-bearing\\index.ts",
+      "accessCount": 1,
+      "lastAccessed": 1778865073311,
+      "type": "file"
+    },
+    {
+      "path": "apps\\api\\src\\routes\\calc.ts",
+      "accessCount": 1,
+      "lastAccessed": 1778865195115,
+      "type": "file"
+    },
+    {
+      "path": "apps\\api\\src\\routes\\admin.ts",
+      "accessCount": 1,
+      "lastAccessed": 1778865215174,
+      "type": "file"
+    },
+    {
+      "path": "apps\\api\\test\\product-routes.test.ts",
+      "accessCount": 1,
+      "lastAccessed": 1778865260694,
+      "type": "file"
+    },
+    {
+      "path": "apps\\web\\tsconfig.json",
+      "accessCount": 1,
+      "lastAccessed": 1778865294412,
+      "type": "file"
+    },
+    {
+      "path": "apps\\web\\vite.config.ts",
+      "accessCount": 1,
+      "lastAccessed": 1778865298000,
+      "type": "file"
+    },
+    {
+      "path": "apps\\web\\tailwind.config.js",
+      "accessCount": 1,
+      "lastAccessed": 1778865300931,
+      "type": "file"
+    },
+    {
+      "path": "apps\\web\\postcss.config.js",
+      "accessCount": 1,
+      "lastAccessed": 1778865301948,
+      "type": "file"
+    },
+    {
+      "path": "apps\\web\\index.html",
+      "accessCount": 1,
+      "lastAccessed": 1778865304997,
+      "type": "file"
+    },
+    {
+      "path": "apps\\web\\src\\styles\\index.css",
+      "accessCount": 1,
+      "lastAccessed": 1778865307003,
+      "type": "file"
+    },
+    {
+      "path": "apps\\web\\src\\main.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1778865309419,
+      "type": "file"
+    },
+    {
+      "path": "apps\\web\\src\\lib\\api.ts",
+      "accessCount": 1,
+      "lastAccessed": 1778865315043,
+      "type": "file"
+    },
+    {
+      "path": "apps\\web\\src\\lib\\auth.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1778865326264,
+      "type": "file"
+    },
+    {
+      "path": "apps\\web\\src\\components\\Disclaimer.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1778865327061,
+      "type": "file"
+    },
+    {
+      "path": "apps\\web\\src\\components\\Layout.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1778865341108,
+      "type": "file"
+    },
+    {
+      "path": "apps\\web\\src\\components\\viewer\\SvgViewer.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1778865360020,
+      "type": "file"
+    },
+    {
+      "path": "apps\\web\\src\\App.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1778865366568,
+      "type": "file"
+    },
+    {
+      "path": "apps\\web\\test\\setup.ts",
+      "accessCount": 1,
+      "lastAccessed": 1778865367627,
+      "type": "file"
+    },
+    {
+      "path": "apps\\web\\test\\SvgViewer.test.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1778865375732,
+      "type": "file"
+    },
+    {
+      "path": "apps\\web\\src\\pages\\Home.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1778865392937,
+      "type": "file"
+    },
+    {
+      "path": "apps\\web\\src\\pages\\Login.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1778865402383,
+      "type": "file"
+    },
+    {
+      "path": "apps\\web\\src\\pages\\Signup.tsx",
+      "accessCount": 1,
+      "lastAccessed": 1778865414911,
+      "type": "file"
+    }
+  ],
+  "userDirectives": []
+}

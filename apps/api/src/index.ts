@@ -3,6 +3,9 @@
 
 import { json, notFound, methodNotAllowed } from "./http";
 import { healthRoute } from "./routes/health";
+import { signupRoute, loginRoute, logoutRoute, meRoute } from "./routes/auth";
+import { listCalculatorsRoute, runCalculatorRoute, historyRoute } from "./routes/calc";
+import { adminUsersListRoute, adminProRoute, adminAuditRoute } from "./routes/admin";
 
 type Handler = (req: Request, env: Env, params: Record<string, string>) => Promise<Response>;
 
@@ -28,6 +31,16 @@ function route(method: string, path: string, handler: Handler): Route {
 
 const routes: Route[] = [
   route("GET", "/api/health", healthRoute),
+  route("POST", "/api/auth/signup", signupRoute),
+  route("POST", "/api/auth/login", loginRoute),
+  route("POST", "/api/auth/logout", logoutRoute),
+  route("GET", "/api/auth/me", meRoute),
+  route("GET", "/api/calc", listCalculatorsRoute),
+  route("POST", "/api/calc/:slug", runCalculatorRoute),
+  route("GET", "/api/history", historyRoute),
+  route("GET", "/api/admin/users", adminUsersListRoute),
+  route("POST", "/api/admin/users/:id/pro", adminProRoute),
+  route("GET", "/api/admin/audit", adminAuditRoute),
 ];
 
 export async function handle(req: Request, env: Env): Promise<Response> {

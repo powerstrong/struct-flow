@@ -2,11 +2,12 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "noEmit": true,
-    "types": ["@cloudflare/workers-types", "vitest/globals"],
+    "jsx": "react-jsx",
+    "types": ["vite/client", "vitest/globals"],
     "paths": {
       "@struct-flow/shared": ["../../packages/shared/src/index.ts"],
       "@struct-flow/shared/*": ["../../packages/shared/src/*"]
     }
   },
-  "include": ["src/**/*", "functions/**/*", "test/**/*"]
+  "include": ["src/**/*", "test/**/*"]
 }

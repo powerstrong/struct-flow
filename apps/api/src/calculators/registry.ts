@@ -10,13 +10,25 @@ export interface Calculator<I, R> {
   version: string;
   tier: CalculatorTier;
   meta: CalculatorMeta;
-  inputSchema: z.ZodType<I>;
+  // ZodType with `Input = unknown` so schemas with `.default()` (Input has optional) still fit.
+  inputSchema: z.ZodType<I, z.ZodTypeDef, unknown>;
   compute: (input: I) => R;
   toViewModel: (input: I, result: R) => ViewModel2D | null;
   // toMgt is intentionally absent in MVP (Phase 2).
 }
 
-export const calculators: Calculator<unknown, unknown>[] = [];
+import { concreteVolume } from "./concrete-volume";
+import { rebarWeight } from "./rebar-weight";
+import { simpleBeamDeflection } from "./simple-beam-deflection";
+import { footingBearing } from "./footing-bearing";
+
+// Order matters for UI listing: free first, then pro.
+export const calculators: Calculator<unknown, unknown>[] = [
+  concreteVolume as Calculator<unknown, unknown>,
+  rebarWeight as Calculator<unknown, unknown>,
+  simpleBeamDeflection as Calculator<unknown, unknown>,
+  footingBearing as Calculator<unknown, unknown>,
+];
 
 export function findCalculator(id: string): Calculator<unknown, unknown> | undefined {
   return calculators.find((c) => c.id === id);

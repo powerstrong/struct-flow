@@ -1,9 +1,13 @@
 // Verifies that migrations/0001_init.sql is valid SQLite and creates the expected 5 tables.
 // Uses Node 22+ built-in `node:sqlite` (no native build tools required).
 import { describe, it, expect } from "vitest";
-import { DatabaseSync } from "node:sqlite";
+import { createRequire } from "node:module";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+
+// Bypass Vite's ESM resolver — node:sqlite is a built-in module that Vite mis-resolves.
+const nodeRequire = createRequire(import.meta.url);
+const { DatabaseSync } = nodeRequire("node:sqlite") as typeof import("node:sqlite");
 
 const sql = readFileSync(join(__dirname, "../migrations/0001_init.sql"), "utf-8");
 

@@ -1,0 +1,73 @@
+Struct Flow MVP — Ralph 진행 노트
+
+## 완료한 일
+
+### Foundation (US-001..US-004)
+- npm workspaces 모노레포 (apps/web, apps/api, packages/shared) — pnpm 미설치 환경 대응
+- AGENTS.md / CLAUDE.md에 7개 경계 규칙 (계산 로직 위치, web fetch-only, mgt 격리, registry 3곳, 단일 라우터, d1 헬퍼, checkProAccess 단일 함수)
+- packages/shared: CalculatorId 유니온 + ViewModel2D + contracts DTO
+- apps/api skeleton: wrangler.toml (dev/prod D1 분리), functions/api/[[path]].ts → src/index.ts 단일 라우터, calculator registry
+- D1 스키마 0001_init.sql (5 테이블 + cascade FK + token_hash unique index)
+
+### Infrastructure (US-005)
+- WebCrypto PBKDF2 100k iterations + per-user salt, timing-safe equal
+- opaque session token (32 bytes base64url, sha256 저장)
+- HttpOnly + SameSite=Lax + Secure 쿠키 헬퍼
+- session-store: createSession / verifySession (자동 expired 정리) / deleteSession / requireSession
+- domain/pro/checkProAccess: 단일 권한 함수 (rule #7)
+- audit.ts: writeAuditLog 일관 헬퍼
+
+### Auth (US-006)
+- signup/login/logout/me 4개 라우트
+- zod 스키마: 이메일 lowercase 정규화 + 8자 비밀번호 + 면책 동의 체크박스 필수
+- 멱등 grantPro: 더블클릭해도 만료일에서부터 연장 (now 기준 아님)
+- 이메일 중복 409, 잘못된 자격증명 401
+- D1 테스트 하니스: node:sqlite + makeTestEnv (어디서나 in-memory env 생성)
+
+### Calculators (US-007)
+- 4개 계산기 모두 동일한 5파일 패턴 (input/compute/view/meta/index + 옵션 mgt)
+- concrete-volume: 폭×길이×두께
+- rebar-weight: KDS 14 20 50 단위중량 적용
+- simple-beam-deflection: UDL 5wL⁴/(384EI), 점하중 PL³/(48EI), L/360 사용성 체크
+- footing-bearing: e≤L/6 사다리꼴 / e>L/6 삼각 분포 (uplift)
+- compute는 pure 검증 (테스트로 동일 입력 동일 출력)
+
+### Product Routes (US-008)
+- /api/calc/:slug: tier gating + history 기록 + 익명은 history 미기록
+- /api/history: 사용자별 격리 + 최근 10건
+- /api/admin/users: 검색 + 100건 제한
+- /api/admin/users/:id/pro: discriminated union (grant/extend/revoke/set-expires-at) + 자동 audit
+- /api/admin/audit: 최근 100건 (limit 파라미터)
+
+### Web SPA (US-009..US-010)
+- Vite + Tailwind + react-router-dom v6
+- DockLayout: 4분할 (좌:입력 / 중:SVG / 우:결과 / 하:네비)
+- SvgViewer: shape kind discriminated union, vector-effect non-scaling-stroke로 줌 안정성
+- feature registry: 4개 계산기 InputForm/ResultPanel 모두 동일 인터페이스
+- AuthProvider + ApiError 클래스 (status/code/message/details 보존)
+- 모든 페이지 푸터에 면책 띠
+
+## 학습/패턴
+
+- **Node 22+ node:sqlite는 Vite ESM 리졸버에서 깨진다.** Test 하니스에서 createRequire로 우회.
+- **z.ZodType<I>는 .default() 있는 zod object를 받지 못한다** (Input/Output 타입 불일치). registry의 Calculator 인터페이스에서 `z.ZodType<I, ZodTypeDef, unknown>`로 변경.
+- **better-sqlite3는 Windows에서 Visual Studio C++ build tools 필요.** Node 22+의 node:sqlite로 대체 가능.
+- **api tsconfig rootDir 설정은 monorepo path alias와 충돌.** rootDir 제거하면 path alias가 매끄럽게 동작.
+- **wrangler/pnpm 미설치 환경**: npx wrangler로 호출 가능. npm workspaces로 충분.
+
+## 미구현 (의도적 — Phase 2)
+
+- MGT command 출력 (domain/mgt/README.md만, 빌더 코드 없음)
+- 결제 연동 (Toss webhook, source='toss' 필드만 미리 두어 호환)
+- 비밀번호 재설정 이메일
+- 위자드 엔진
+- 3D 뷰어
+- 다국어
+- rate limit / KV / Cron 백업
+
+## 다음 1차 작업 후보 (사용자 합의 후 진행)
+
+1. wrangler pages dev 실연결 검증 (현재는 단위/통합 테스트 한정, 실제 D1 binding 미연결)
+2. 첫 admin 계정 부트스트래핑용 wrangler d1 execute 스니펫을 migrations/README.md에 추가
+3. .dev.vars 예시 + COOKIE_SECURE=false (로컬 http) 안내
+4. 계산기 5번째 추가 시 패턴이 잘 유지되는지 dry-run

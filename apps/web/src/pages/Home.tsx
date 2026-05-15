@@ -1,0 +1,44 @@
+import { Link } from "react-router-dom";
+import { DISCLAIMER_TEXT } from "../components/Disclaimer";
+
+const TOOLS = [
+  { slug: "concrete-volume", title: "콘크리트 물량", tier: "free" },
+  { slug: "rebar-weight", title: "철근 중량", tier: "free" },
+  { slug: "simple-beam-deflection", title: "단순보 처짐", tier: "pro" },
+  { slug: "footing-bearing", title: "독립기초 접지압", tier: "pro" },
+] as const;
+
+export function Home() {
+  return (
+    <div className="max-w-5xl mx-auto px-6 py-10">
+      <h1 className="text-3xl font-bold text-ink mb-2">Struct Flow</h1>
+      <p className="text-gray-600 mb-6">
+        구조설계 엔지니어를 위한 pre-check 워크벤치. 서버에서 계산식을 실행하고 2D 도식으로 결과를 확인합니다.
+      </p>
+
+      <div className="bg-amber-50 border border-amber-200 rounded p-4 text-sm text-amber-900 mb-8">
+        ⚠️ {DISCLAIMER_TEXT}
+      </div>
+
+      <h2 className="text-lg font-semibold text-ink mb-3">MVP 계산기</h2>
+      <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {TOOLS.map((t) => (
+          <li key={t.slug}>
+            <Link
+              to={`/calc/${t.slug}`}
+              className="block bg-white rounded border border-gray-200 p-4 hover:border-accent hover:shadow-sm transition"
+            >
+              <div className="flex items-baseline justify-between">
+                <span className="font-medium text-ink">{t.title}</span>
+                <span className={t.tier === "pro" ? "text-xs text-accent font-bold" : "text-xs text-gray-500"}>
+                  {t.tier.toUpperCase()}
+                </span>
+              </div>
+              <div className="text-xs text-gray-500 mt-1">/calc/{t.slug}</div>
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
