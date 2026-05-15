@@ -380,6 +380,41 @@ describe("admin routes", () => {
     expect(res.status).toBe(409);
   });
 
+  it("grant on a NATURALLY-EXPIRED entitlement creates a FRESH active row (does not revive stale)", async () => {
+    const admin = await signupAndGetCookie(env, "admin@x.com");
+    await makeAdmin(env, admin.userId);
+    const target = await signupAndGetCookie(env, "target@x.com");
+
+    env.__db
+      .prepare(
+        "INSERT INTO pro_entitlements (id, user_id, plan, status, granted_at, expires_at, granted_by, source) VALUES ('p-stale', ?, 'pro-1y', 'active', ?, ?, ?, 'manual')",
+      )
+      .run(target.userId, "2020-01-01T00:00:00.000Z", "2020-12-31T00:00:00.000Z", admin.userId);
+
+    const res = await handle(
+      new Request(`https://x.test/api/admin/users/${target.userId}/pro`, {
+        method: "POST",
+        headers: { "content-type": "application/json", cookie: admin.cookie },
+        body: JSON.stringify({ action: "grant", years: 1, memo: "fresh grant after expiry" }),
+      }),
+      env,
+    );
+    expect(res.status).toBe(200);
+
+    const me = await handle(new Request("https://x.test/api/auth/me", { headers: { cookie: target.cookie } }), env);
+    expect((await json<{ proActive: boolean }>(me)).proActive).toBe(true);
+
+    const stale = env.__db
+      .prepare("SELECT expires_at FROM pro_entitlements WHERE id = 'p-stale'")
+      .get() as { expires_at: string };
+    expect(stale.expires_at).toBe("2020-12-31T00:00:00.000Z");
+
+    const count = (env.__db
+      .prepare("SELECT count(*) AS c FROM pro_entitlements WHERE user_id = ?")
+      .get(target.userId) as { c: number }).c;
+    expect(count).toBe(2);
+  });
+
   it("set-expires-at on a NATURALLY-EXPIRED entitlement returns 409 (no silent revival)", async () => {
     const admin = await signupAndGetCookie(env, "admin@x.com");
     await makeAdmin(env, admin.userId);
