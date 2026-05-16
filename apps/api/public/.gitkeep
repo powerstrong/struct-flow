@@ -1,1 +1,0 @@
-# wrangler pages dev/deploy의 정적 출력 디렉토리. apps/web build 결과를 여기로 복사하거나 빌드 파이프라인에서 지정.

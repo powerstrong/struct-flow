@@ -4,13 +4,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "wrangler pages dev ./public --d1 DB=structmate-dev-db",
-    "deploy": "wrangler pages deploy ./public",
     "build": "tsc --noEmit",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run",
-    "migrate:dev": "wrangler d1 migrations apply structmate-dev-db --local",
-    "migrate:prod": "wrangler d1 migrations apply structmate-prod-db --remote"
+    "test": "vitest run"
   },
   "dependencies": {
     "@struct-flow/shared": "*",
