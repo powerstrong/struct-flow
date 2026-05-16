@@ -1,40 +1,64 @@
-Struct Flow MVP — Ralph 진행 노트
+Struct Flow MVP — Ralph 진행 노트 (Day 1 마감 시점)
 
-## 완료한 일
+## 최종 상태
+
+- **PRD**: 11/11 user stories all passes:true
+- **테스트**: API 75/75 + Web 2/2 = 77/77 vitest 통과
+- **빌드**: web 217.26 KB JS / 11.59 KB CSS (gzip 71/3 KB), api tsc 0 에러
+- **Codex 리뷰**: 3라운드 (REJECT → REJECT → ACCEPT-WITH-RESERVATIONS, Critical 0 / Major 0)
+- **Deslop**: features/_shared.tsx 통합 (~80라인 삭제)
+- **로컬 실연**: wrangler pages dev (8788) + vite dev (5173) 동시 구동 확인, signup/me/calc 동작
+- **GitHub**: https://github.com/powerstrong/struct-flow `main` 푸시 완료
+
+## 커밋 히스토리 (Day 1)
+
+```
+65ae98b chore: drop all disclaimer copy + agreeDisclaimer signup gate
+feba356 chore(deslop): consolidate NumField/SubmitBtn/Row → features/_shared.tsx
+0546b97 test: grant on naturally-expired entitlement creates fresh row
+78c07dd fix(codex-round2): expired-entitlement guard in revoke/set-expires-at
+ea3bf8f fix(codex-review): rule #6 d1 helper, footing P=0/M>0, web dedup, etc.
+e51292c feat: MVP complete — auth, 4 calculators, history, admin, SPA (US-005..US-011)
+4f164c9 chore: scaffold monorepo + shared types + API skeleton + D1 migrations (US-001..US-004)
+```
+
+## 완료한 일 (스토리별)
 
 ### Foundation (US-001..US-004)
 - npm workspaces 모노레포 (apps/web, apps/api, packages/shared) — pnpm 미설치 환경 대응
 - AGENTS.md / CLAUDE.md에 7개 경계 규칙 (계산 로직 위치, web fetch-only, mgt 격리, registry 3곳, 단일 라우터, d1 헬퍼, checkProAccess 단일 함수)
-- packages/shared: CalculatorId 유니온 + ViewModel2D + contracts DTO
+- packages/shared: CalculatorId + CalculatorTier 유니온, ViewModel2D, contracts DTO (ApiError/MeResponse/HistoryItem/AdminUserSummary/AdminAuditItem/CalcRunResponse)
 - apps/api skeleton: wrangler.toml (dev/prod D1 분리), functions/api/[[path]].ts → src/index.ts 단일 라우터, calculator registry
 - D1 스키마 0001_init.sql (5 테이블 + cascade FK + token_hash unique index)
 
 ### Infrastructure (US-005)
-- WebCrypto PBKDF2 100k iterations + per-user salt, timing-safe equal
+- WebCrypto PBKDF2 100k iterations + per-user salt + timing-safe equal
 - opaque session token (32 bytes base64url, sha256 저장)
-- HttpOnly + SameSite=Lax + Secure 쿠키 헬퍼
-- session-store: createSession / verifySession (자동 expired 정리) / deleteSession / requireSession
+- HttpOnly + SameSite=Lax + Secure 쿠키 헬퍼 (COOKIE_SECURE 환경변수)
+- session-store: createSession / verifySession (expired auto-cleanup) / deleteSession / requireSession
 - domain/pro/checkProAccess: 단일 권한 함수 (rule #7)
 - audit.ts: writeAuditLog 일관 헬퍼
+- ids.ts: newUuid, newToken (base64url-safe), sha256Hex
 
 ### Auth (US-006)
 - signup/login/logout/me 4개 라우트
-- zod 스키마: 이메일 lowercase 정규화 + 8자 비밀번호 + 면책 동의 체크박스 필수
+- zod 스키마: 이메일 lowercase 정규화 + 8자 비밀번호 (면책 동의 체크박스는 Day 1 마지막에 제거됨)
 - 멱등 grantPro: 더블클릭해도 만료일에서부터 연장 (now 기준 아님)
 - 이메일 중복 409, 잘못된 자격증명 401
+- revokePro/setProExpiresAt은 활성 entitlement 없으면 409 (codex round 2 fix)
 - D1 테스트 하니스: node:sqlite + makeTestEnv (어디서나 in-memory env 생성)
 
 ### Calculators (US-007)
 - 4개 계산기 모두 동일한 5파일 패턴 (input/compute/view/meta/index + 옵션 mgt)
 - concrete-volume: 폭×길이×두께
-- rebar-weight: KDS 14 20 50 단위중량 적용
+- rebar-weight: KDS 14 20 50 단위중량 (D10~D29) 적용
 - simple-beam-deflection: UDL 5wL⁴/(384EI), 점하중 PL³/(48EI), L/360 사용성 체크
-- footing-bearing: e≤L/6 사다리꼴 / e>L/6 삼각 분포 (uplift)
+- footing-bearing: e≤L/6 사다리꼴 / e>L/6 삼각 분포 (uplift) + P=0/M>0 가드 (codex round 1 fix)
 - compute는 pure 검증 (테스트로 동일 입력 동일 출력)
 
 ### Product Routes (US-008)
 - /api/calc/:slug: tier gating + history 기록 + 익명은 history 미기록
-- /api/history: 사용자별 격리 + 최근 10건
+- /api/history: 사용자별 격리 + 최근 10건 (created_at DESC)
 - /api/admin/users: 검색 + 100건 제한
 - /api/admin/users/:id/pro: discriminated union (grant/extend/revoke/set-expires-at) + 자동 audit
 - /api/admin/audit: 최근 100건 (limit 파라미터)
@@ -43,31 +67,66 @@ Struct Flow MVP — Ralph 진행 노트
 - Vite + Tailwind + react-router-dom v6
 - DockLayout: 4분할 (좌:입력 / 중:SVG / 우:결과 / 하:네비)
 - SvgViewer: shape kind discriminated union, vector-effect non-scaling-stroke로 줌 안정성
-- feature registry: 4개 계산기 InputForm/ResultPanel 모두 동일 인터페이스
+- features/_shared.tsx: NumField/SubmitBtn/Row 통합 (deslop 후)
+- features/registry.ts에 `tier` 필드 추가 → CalculatorPage 안의 META 매핑 제거 (single source)
+- shared/contracts.ts DTO를 web 페이지에서 직접 import (drift 방지): AdminUserSummary, AdminAuditItem, HistoryItem, CalcRunResponse
 - AuthProvider + ApiError 클래스 (status/code/message/details 보존)
-- 모든 페이지 푸터에 면책 띠
 
-## 학습/패턴
+### Codex Review 라운드 요약
 
-- **Node 22+ node:sqlite는 Vite ESM 리졸버에서 깨진다.** Test 하니스에서 createRequire로 우회.
-- **z.ZodType<I>는 .default() 있는 zod object를 받지 못한다** (Input/Output 타입 불일치). registry의 Calculator 인터페이스에서 `z.ZodType<I, ZodTypeDef, unknown>`로 변경.
-- **better-sqlite3는 Windows에서 Visual Studio C++ build tools 필요.** Node 22+의 node:sqlite로 대체 가능.
-- **api tsconfig rootDir 설정은 monorepo path alias와 충돌.** rootDir 제거하면 path alias가 매끄럽게 동작.
-- **wrangler/pnpm 미설치 환경**: npx wrangler로 호출 가능. npm workspaces로 충분.
+- **Round 1 (REJECT)** → 커밋 ea3bf8f로 수정:
+  - rule #6 위반(라우트 안에서 raw env.DB.prepare): infra/d1 헬퍼로 교체
+  - footing P=0 + M>0일 때 e=Infinity → P=0 가드
+  - web/api DTO drift 방지: shared/contracts.ts에 AdminUserSummary 등 추가하고 web에서 직접 import
+  - history 정렬 보장: ORDER BY created_at DESC
+  - set-expires-at에서 영향받는 row 없을 때 처리
+- **Round 2 (REJECT)** → 커밋 78c07dd로 수정:
+  - revoke/set-expires-at이 active 없을 때 silently OK 반환 → 409 반환으로 일관성 확보
+- **Round 3 (ACCEPT-WITH-RESERVATIONS)** → 0546b97로 보강:
+  - grant-on-naturally-expired 시 새 row 생성되는지 회귀 테스트 추가
+
+### Deslop (커밋 feba356)
+- features/{4 slugs}/index.tsx에서 동일하게 반복되던 NumField/SubmitBtn/Row 컴포넌트를 features/_shared.tsx로 추출
+- 약 80라인 삭제, 번들 221.74 → 219.44 KB
+
+### 면책 카피 제거 (커밋 65ae98b)
+- web: Disclaimer.tsx / DisclaimerPage.tsx 파일 자체 삭제
+- Layout.tsx: 푸터 면책 띠 + /disclaimer 링크 제거
+- Home.tsx: amber 박스 제거
+- Signup.tsx: 면책 박스 + agreeDisclaimer 체크박스 제거, AuthCtx 시그니처에서도 제거
+- Terms.tsx: 첫 조항 "본 서비스는 pre-check 도구로 제공되며..." 제거
+- App.tsx: /disclaimer 라우트 제거
+- api: signupSchema에서 agreeDisclaimer: z.literal(true) 제거
+- 테스트: agreeDisclaimer 관련 케이스 제거 (API 76 → 75)
+- README.md / AGENTS.md: 면책 섹션 / "면책 / 표시 의무" 규칙 제거
+
+## 학습/패턴 (다음 세션에 도움)
+
+- **Node 22+ node:sqlite는 Vite ESM 리졸버에서 깨진다.** Test 하니스에서 `createRequire`로 우회.
+- **z.ZodType<I>는 `.default()` 있는 zod object를 받지 못한다** (Input/Output 타입 불일치). registry의 Calculator 인터페이스에서 `z.ZodType<I, z.ZodTypeDef, unknown>`로 변경.
+- **better-sqlite3는 Windows에서 Visual Studio C++ build tools 필요.** Node 22+의 `node:sqlite`로 대체 가능.
+- **apps/api tsconfig의 rootDir 설정은 monorepo path alias와 충돌.** rootDir 제거하면 path alias가 매끄럽게 동작.
+- **wrangler/pnpm 미설치 환경**: `npx wrangler`로 호출 가능. npm workspaces로 충분.
+- **wrangler pages dev `--d1` 플래그는 wrangler.toml 바인딩과 별개 D1 인스턴스를 만든다.** 로컬 실행에서는 플래그를 빼고 wrangler.toml의 binding만 쓰는 게 마이그레이션 상태 공유에 안전. (apps/api/package.json의 `dev` 스크립트에 `--d1 DB=...`가 남아 있으면 이걸 빼야 함)
+- **PowerShell의 `Invoke-RestMethod`는 한글 콘솔 출력 시 디코딩 깨질 수 있음** — 실제 DB/응답은 UTF-8 정상, 출력만 깨짐.
 
 ## 미구현 (의도적 — Phase 2)
 
-- MGT command 출력 (domain/mgt/README.md만, 빌더 코드 없음)
-- 결제 연동 (Toss webhook, source='toss' 필드만 미리 두어 호환)
+- MGT command 출력 (`domain/mgt/README.md`만, 빌더 코드 없음)
+- 결제 연동 (Toss webhook, `source='toss'` 필드만 미리 두어 호환)
 - 비밀번호 재설정 이메일
 - 위자드 엔진
 - 3D 뷰어
 - 다국어
 - rate limit / KV / Cron 백업
+- 통계/그래프가 있는 관리자 대시보드
 
-## 다음 1차 작업 후보 (사용자 합의 후 진행)
+## 다음 작업 후보 (Day 2 진입 시 우선 검토)
 
-1. wrangler pages dev 실연결 검증 (현재는 단위/통합 테스트 한정, 실제 D1 binding 미연결)
-2. 첫 admin 계정 부트스트래핑용 wrangler d1 execute 스니펫을 migrations/README.md에 추가
-3. .dev.vars 예시 + COOKIE_SECURE=false (로컬 http) 안내
-4. 계산기 5번째 추가 시 패턴이 잘 유지되는지 dry-run
+1. **Cloudflare D1 실제 binding 연결**: `wrangler d1 create structmate-dev-db` → wrangler.toml의 `REPLACE_WITH_*_ID` 채우기 → preview/prod 배포
+2. **첫 admin 부트스트래핑**: `npx wrangler d1 execute structmate-dev-db --remote --command "UPDATE users SET is_admin=1 WHERE email='jusunglee85@gmail.com'"` (운영 모드)
+3. **GitHub Actions CI**: build/test/typecheck 자동화
+4. **apps/api/package.json의 `dev` 스크립트에서 `--d1 DB=structmate-dev-db` 제거** — wrangler.toml binding만 사용하도록 (로컬 마이그레이션 상태 공유 위해)
+5. **.dev.vars 예시 추가**: `COOKIE_SECURE=false` (로컬 http) 안내
+6. **계산기 5번째 추가 dry-run**: 5파일 패턴이 잘 유지되는지 + registry 3곳 룰 검증
+7. **migrations/README.md에 admin 부트스트래핑 SQL 스니펫 추가**
