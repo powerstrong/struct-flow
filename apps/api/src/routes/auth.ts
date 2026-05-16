@@ -9,7 +9,7 @@ import {
   cookieSecureFromEnv,
   readSessionCookie,
 } from "../infra/auth";
-import { createSession, deleteSession, verifySession } from "../infra/session-store";
+import { createSession, deleteSession, verifySession, attachRefresh } from "../infra/session-store";
 import { newUuid } from "../infra/ids";
 import { checkProAccess } from "../domain/pro/checkProAccess";
 
@@ -144,12 +144,15 @@ export async function meRoute(req: Request, env: Env): Promise<Response> {
   );
   if (!user) return unauthorized();
   const pro = await checkProAccess(env, user.id);
-  return json({
-    id: user.id,
-    email: user.email,
-    displayName: user.display_name,
-    isAdmin: user.is_admin === 1,
-    proActive: pro.active,
-    proExpiresAt: pro.expiresAt,
-  });
+  return attachRefresh(
+    json({
+      id: user.id,
+      email: user.email,
+      displayName: user.display_name,
+      isAdmin: user.is_admin === 1,
+      proActive: pro.active,
+      proExpiresAt: pro.expiresAt,
+    }),
+    session.refreshCookie,
+  );
 }

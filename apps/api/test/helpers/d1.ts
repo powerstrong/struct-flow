@@ -2,14 +2,14 @@
 // Lets us run integration tests against real SQL without spinning up wrangler.
 
 import { createRequire } from "node:module";
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 const nodeRequire = createRequire(import.meta.url);
 const { DatabaseSync } = nodeRequire("node:sqlite") as typeof import("node:sqlite");
 type Db = InstanceType<typeof DatabaseSync>;
 
-const MIGRATION_PATH = join(__dirname, "..", "..", "migrations", "0001_init.sql");
+const MIGRATIONS_DIR = join(__dirname, "..", "..", "migrations");
 
 export interface TestEnv extends Env {
   __db: Db;
@@ -18,7 +18,12 @@ export interface TestEnv extends Env {
 export function makeTestEnv(): TestEnv {
   const db = new DatabaseSync(":memory:");
   db.exec("PRAGMA foreign_keys = ON;");
-  db.exec(readFileSync(MIGRATION_PATH, "utf-8"));
+  const files = readdirSync(MIGRATIONS_DIR)
+    .filter((f) => f.endsWith(".sql"))
+    .sort();
+  for (const f of files) {
+    db.exec(readFileSync(join(MIGRATIONS_DIR, f), "utf-8"));
+  }
   return {
     DB: wrapAsD1(db),
     APP_ENV: "dev",

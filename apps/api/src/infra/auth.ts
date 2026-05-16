@@ -8,8 +8,9 @@ export const PBKDF2_HASH = "SHA-256";
 export const PBKDF2_KEY_BITS = 256;
 export const SALT_BYTES = 16;
 
-export const SESSION_TTL_DAYS = 30;
-export const SESSION_TTL_MS = SESSION_TTL_DAYS * 24 * 60 * 60 * 1000;
+export const SESSION_IDLE_TTL_MS = 60 * 60 * 1000;             // 1h idle
+export const SESSION_ABSOLUTE_MAX_MS = 30 * 24 * 60 * 60 * 1000; // 30d hard cap
+export const SESSION_RENEW_THRESHOLD_MS = 15 * 60 * 1000;       // slide only when <=15min remaining
 export const SESSION_COOKIE_NAME = "sf_session";
 
 export function newSalt(): string {
@@ -75,28 +76,37 @@ export interface CreatedSession {
   /** sha256(token) stored in DB. */
   tokenHash: string;
   sessionId: string;
+  /** Idle expiry — slides on near-expiry requests. */
   expiresAt: string;
+  /** Hard ceiling — never extends past this. */
+  absoluteMaxAt: string;
 }
 
 export async function createSessionRecord(): Promise<CreatedSession> {
   const token = newToken(32);
   const tokenHash = await sha256Hex(token);
   const sessionId = newUuid();
-  const expiresAt = new Date(Date.now() + SESSION_TTL_MS).toISOString();
-  return { token, tokenHash, sessionId, expiresAt };
+  const now = Date.now();
+  const expiresAt = new Date(now + SESSION_IDLE_TTL_MS).toISOString();
+  const absoluteMaxAt = new Date(now + SESSION_ABSOLUTE_MAX_MS).toISOString();
+  return { token, tokenHash, sessionId, expiresAt, absoluteMaxAt };
 }
 
 export interface CookieOptions {
   secure: boolean;
 }
 
-export function buildSessionCookie(token: string, opts: CookieOptions): string {
+export function buildSessionCookie(
+  token: string,
+  opts: CookieOptions,
+  maxAgeSeconds: number = Math.floor(SESSION_IDLE_TTL_MS / 1000),
+): string {
   const parts = [
     `${SESSION_COOKIE_NAME}=${token}`,
     "HttpOnly",
     "SameSite=Lax",
     "Path=/",
-    `Max-Age=${Math.floor(SESSION_TTL_MS / 1000)}`,
+    `Max-Age=${maxAgeSeconds}`,
   ];
   if (opts.secure) parts.push("Secure");
   return parts.join("; ");

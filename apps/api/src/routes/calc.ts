@@ -3,7 +3,7 @@ import { json, badRequest, unauthorized, forbidden, notFound, error } from "../h
 import { findCalculator, calculators } from "../calculators/registry";
 import { getAll, run, nowIso } from "../infra/d1";
 import { newUuid } from "../infra/ids";
-import { requireSession } from "../infra/session-store";
+import { requireSession, attachRefresh } from "../infra/session-store";
 import { checkProAccess } from "../domain/pro/checkProAccess";
 
 export async function listCalculatorsRoute(_req: Request, _env: Env): Promise<Response> {
@@ -67,13 +67,16 @@ export async function runCalculatorRoute(
     );
   }
 
-  return json({
-    toolSlug: calc.id,
-    toolVersion: calc.version,
-    result,
-    viewModel,
-    recordedAt,
-  });
+  return attachRefresh(
+    json({
+      toolSlug: calc.id,
+      toolVersion: calc.version,
+      result,
+      viewModel,
+      recordedAt,
+    }),
+    session?.refreshCookie,
+  );
 }
 
 async function safeJson(req: Request): Promise<unknown> {
@@ -102,15 +105,18 @@ export async function historyRoute(req: Request, env: Env): Promise<Response> {
     session.userId,
     10,
   );
-  return json(
-    rows.map((r) => ({
-      id: r.id,
-      toolSlug: r.tool_slug,
-      toolVersion: r.tool_version,
-      inputJson: safeParse(r.input_json),
-      resultJson: safeParse(r.result_json),
-      createdAt: r.created_at,
-    })),
+  return attachRefresh(
+    json(
+      rows.map((r) => ({
+        id: r.id,
+        toolSlug: r.tool_slug,
+        toolVersion: r.tool_version,
+        inputJson: safeParse(r.input_json),
+        resultJson: safeParse(r.result_json),
+        createdAt: r.created_at,
+      })),
+    ),
+    session.refreshCookie,
   );
 }
 

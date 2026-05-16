@@ -1,13 +1,14 @@
 import { z } from "zod";
 import { json, badRequest, unauthorized, forbidden, notFound, error } from "../http";
 import { getOne, getAll } from "../infra/d1";
-import { requireSession } from "../infra/session-store";
+import { requireSession, attachRefresh } from "../infra/session-store";
 import { writeAuditLog } from "../infra/audit";
 import { grantPro, revokePro, setProExpiresAt } from "../domain/pro/grantPro";
 import { checkProAccess } from "../domain/pro/checkProAccess";
 
 interface AdminCtx {
   adminUserId: string;
+  refreshCookie?: string;
 }
 
 async function requireAdmin(req: Request, env: Env): Promise<AdminCtx | Response> {
@@ -19,7 +20,7 @@ async function requireAdmin(req: Request, env: Env): Promise<AdminCtx | Response
     session.userId,
   );
   if (!user || user.is_admin !== 1) return forbidden("관리자 권한이 필요합니다.");
-  return { adminUserId: session.userId };
+  return { adminUserId: session.userId, refreshCookie: session.refreshCookie };
 }
 
 interface UserRow {
@@ -62,7 +63,7 @@ export async function adminUsersListRoute(req: Request, env: Env): Promise<Respo
       };
     }),
   );
-  return json(summaries);
+  return attachRefresh(json(summaries), ctx.refreshCookie);
 }
 
 const proActionSchema = z.discriminatedUnion("action", [
@@ -122,7 +123,7 @@ export async function adminProRoute(
   });
 
   const pro = await checkProAccess(env, targetUserId);
-  return json({ result: resultPayload, proStatus: pro });
+  return attachRefresh(json({ result: resultPayload, proStatus: pro }), ctx.refreshCookie);
 }
 
 export async function adminAuditRoute(req: Request, env: Env): Promise<Response> {
@@ -143,15 +144,18 @@ export async function adminAuditRoute(req: Request, env: Env): Promise<Response>
     "SELECT id, admin_user_id, action_type, target_user_id, payload_json, created_at FROM admin_audit_logs ORDER BY created_at DESC LIMIT ?",
     limit,
   );
-  return json(
-    rows.map((r) => ({
-      id: r.id,
-      adminUserId: r.admin_user_id,
-      actionType: r.action_type,
-      targetUserId: r.target_user_id,
-      payloadJson: safeParse(r.payload_json),
-      createdAt: r.created_at,
-    })),
+  return attachRefresh(
+    json(
+      rows.map((r) => ({
+        id: r.id,
+        adminUserId: r.admin_user_id,
+        actionType: r.action_type,
+        targetUserId: r.target_user_id,
+        payloadJson: safeParse(r.payload_json),
+        createdAt: r.created_at,
+      })),
+    ),
+    ctx.refreshCookie,
   );
 }
 
